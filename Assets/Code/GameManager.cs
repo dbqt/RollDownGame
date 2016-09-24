@@ -29,6 +29,7 @@ public class GameManager : MonoBehaviour {
 	private float upSpeedInternal;
 	private int lastHolePosition;
 	private RewardBasedVideoAd rewardBasedVideo;
+	private BannerView bannerView;
 
 	public float GetUpSpeed()
 	{ return upSpeedInternal; }
@@ -44,9 +45,9 @@ public class GameManager : MonoBehaviour {
 		upSpeedInternal = 0f;
 
 	
-		RequestInterstitial();
-		
-
+		RequestAd();
+		RequestBanner();
+		bannerView.Hide();
 		
 
 		//PlayerPrefs.SetInt("TotalPoints", 0);
@@ -157,6 +158,7 @@ public class GameManager : MonoBehaviour {
 		}*/
 
 		if (rewardBasedVideo.IsLoaded()) {
+			Debug.Log("video was loaded, should show");
     		rewardBasedVideo.Show();
   		} else {
   			Debug.Log("failed firebase ad");
@@ -189,34 +191,135 @@ public class GameManager : MonoBehaviour {
 		}
 	}*/
 
-	private void RequestInterstitial()
+	private void RequestBanner()
 	{
-	    #if UNITY_ANDROID
-	        string adUnitId = "ca-app-pub-5954594840677307";
-	    #else
-	        string adUnitId = "unexpected_platform";
+		if(bannerView != null) return;
+		//#if UNITY_EDITOR
+	      //  string adUnitId = "unused";
+	    //#elif UNITY_ANDROID
+		    string adUnitId = "ca-app-pub-5954594840677307/1344550475";
+	    //#endif
+
+		AdSize adSize = new AdSize(320, 50);
+	    bannerView = new BannerView(adUnitId, adSize, AdPosition.Bottom);
+	    // Called when the ad click caused the user to leave the application.
+	    bannerView.OnAdLeavingApplication += HandleOnAdLeavingApplication;
+	    // Called when an ad request has successfully loaded.
+	    bannerView.OnAdLoaded += HandleOnAdLoaded;
+	    // Called when an ad request failed to load.
+	    bannerView.OnAdFailedToLoad += HandleOnAdFailedToLoad;
+
+	    AdRequest request = new AdRequest.Builder().Build();
+	    bannerView.LoadAd(request);
+
+	   // SetBannerAdActive(false);
+	}
+
+	public void SetBannerAdActive(bool isActive)
+	{
+		Debug.Log("set banner");
+
+		if(bannerView == null) {
+			RequestBanner();
+			return;
+		}
+		if(isActive){
+			Debug.Log("banner show");
+			bannerView.Show();
+		} 
+		 else { 
+			Debug.Log("banner hide");
+			bannerView.Hide(); 
+		}
+	}
+
+	public void HandleOnAdLoaded(object sender, EventArgs args)
+	{
+	    Debug.Log("banner loaded received.");
+	    // Handle the ad loaded event.
+	}
+
+	public void HandleOnAdFailedToLoad(object sender, EventArgs args)
+	{
+	    Debug.Log("banner loaded fail received.");
+	    // Handle the ad loaded event.
+	}
+
+	public void HandleOnAdLeavingApplication(object sender, EventArgs args)
+	{
+	    Debug.Log("leaving received.");
+	    bannerView.Destroy();
+	    // Handle the ad loaded event.
+	}
+
+	private void RequestAd()
+	{
+	    #if UNITY_EDITOR
+	        string adUnitId = "unused";
+	    #elif UNITY_ANDROID
+		    string adUnitId = "ca-app-pub-5954594840677307/9720598475";
 	    #endif
 
 	    rewardBasedVideo = RewardBasedVideoAd.Instance;
 
+		// Ad event fired when the rewarded video ad
+	    // has been received.
+	    rewardBasedVideo.OnAdLoaded += HandleRewardBasedVideoLoaded;
+	    // has failed to load.
+	    rewardBasedVideo.OnAdFailedToLoad += HandleRewardBasedVideoFailedToLoad;
+	    // is opened.
+	    rewardBasedVideo.OnAdOpening += HandleRewardBasedVideoOpened;
+	    // has started playing.
+	    rewardBasedVideo.OnAdStarted += HandleRewardBasedVideoStarted;
+	    // has rewarded the user.
+	    rewardBasedVideo.OnAdRewarded += HandleRewardBasedVideoRewarded;
+	    // is closed.
+	    rewardBasedVideo.OnAdClosed += HandleRewardBasedVideoClosed;
+
 	    AdRequest request = new AdRequest.Builder().Build();
 	    rewardBasedVideo.LoadAd(request, adUnitId);
-	    rewardBasedVideo.OnAdRewarded += HandleRewardBasedVideoRewarded;
-	    rewardBasedVideo.OnAdLeavingApplication += HandleOnAdLeavingApplication;
+	}
+
+	public void HandleRewardBasedVideoLoaded(object sender, EventArgs args)
+	{
+	    Debug.Log("loaded event received.");
+
+	    // Handle the ad loaded event.
+	}
+
+	public void HandleRewardBasedVideoFailedToLoad(object sender, EventArgs args)
+	{
+	    Debug.Log("loaded fail event received.");
+	    //rewardBasedVideo.Destroy();
+	    // Handle the ad loaded event.
+	}
+
+	public void HandleRewardBasedVideoOpened(object sender, EventArgs args)
+	{
+	    Debug.Log("opened event received.");
+	    //rewardBasedVideo.Destroy();
+	    // Handle the ad loaded event.
+	}
+
+	public void HandleRewardBasedVideoStarted(object sender, EventArgs args)
+	{
+	    Debug.Log("started event received.");
+	    //rewardBasedVideo.Destroy();
+	    // Handle the ad loaded event.
 	}
 
 	public void HandleRewardBasedVideoRewarded(object sender, EventArgs args)
 	{
-	    Debug.Log("rewared event received.");
+	    Debug.Log("rewarded event received.");
 	    int n = PlayerPrefs.GetInt("TotalPoints")+100;
 		PlayerPrefs.SetInt("TotalPoints", n);
 		PlayerPrefs.SetString("Date", System.DateTime.Now.AddHours(1).ToString());
 	    // Handle the ad loaded event.
 	}
 
-	public void HandleOnAdLeavingApplication(object sender, EventArgs args)
+	public void HandleRewardBasedVideoClosed(object sender, EventArgs args)
 	{
-	    Debug.Log("OnAdLoaded event received.");
+	    Debug.Log("closed event received.");
 	    //rewardBasedVideo.Destroy();
 	    // Handle the ad loaded event.
 	}

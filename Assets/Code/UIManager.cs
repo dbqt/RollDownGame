@@ -84,6 +84,8 @@ public class UIManager : MonoBehaviour {
 		Shop.SetActive(false);
 		Back.gameObject.SetActive(false);
 		Ads.gameObject.SetActive(false);
+
+		GameManager.instance.SetBannerAdActive(false);
 	}
 
 	public void PlayGame() {
@@ -100,6 +102,8 @@ public class UIManager : MonoBehaviour {
 		Shop.SetActive(false);
 		Back.gameObject.SetActive(false);
 		Ads.gameObject.SetActive(false);
+
+		GameManager.instance.SetBannerAdActive(false);
 	}
 
 	public void GoShop() {
@@ -118,6 +122,8 @@ public class UIManager : MonoBehaviour {
 		Back.gameObject.SetActive(true);
 		Ads.gameObject.SetActive(true);
 		SetShopButtons();
+
+		GameManager.instance.SetBannerAdActive(true);
 	}
 
 	public void ToggleControl() {
