@@ -1,7 +1,9 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
 
-using UnityEngine.Advertisements;
+//using UnityEngine.Advertisements;
+using GoogleMobileAds.Api;
 
 public class GameManager : MonoBehaviour {
 
@@ -25,6 +27,8 @@ public class GameManager : MonoBehaviour {
 	private bool isPlaying;
 
 	private float upSpeedInternal;
+	private int lastHolePosition;
+	private RewardBasedVideoAd rewardBasedVideo;
 
 	public float GetUpSpeed()
 	{ return upSpeedInternal; }
@@ -38,6 +42,10 @@ public class GameManager : MonoBehaviour {
 		isPlaying = false;
 		ui.Menu();
 		upSpeedInternal = 0f;
+
+	
+		RequestInterstitial();
+		
 
 		
 
@@ -104,10 +112,13 @@ public class GameManager : MonoBehaviour {
 
 		GameObject n = Instantiate(PlatformPrefab, new Vector3(0f,height,0f) , Quaternion.identity) as GameObject;
 
-		int mode = Mathf.FloorToInt(Random.Range(0f, difficulty+1));
+		int mode = Mathf.FloorToInt(UnityEngine.Random.Range(0f, difficulty+1));
 		switch(mode) {
 			case 0: {
-				int hole = Mathf.RoundToInt(Random.Range(-0.49f, 8.5f));
+				// make sure the new hole isnt too far away
+				int hole = lastHolePosition + Mathf.RoundToInt(UnityEngine.Random.Range(-3.49f, 3.49f));
+				hole = Mathf.RoundToInt(Mathf.Clamp(hole,-0.49f, 8.5f));
+				lastHolePosition = hole;
 				n.GetComponent<PlatformReferences>().Pieces[hole].gameObject.SetActive(false);
 				n.GetComponent<PlatformReferences>().Pieces[hole+1].gameObject.SetActive(false);
 				n.GetComponent<PlatformReferences>().Pieces[hole+2].gameObject.SetActive(false);
@@ -115,8 +126,10 @@ public class GameManager : MonoBehaviour {
 			}
 			break;
 			case 1: {
-			int hole = Mathf.RoundToInt(Random.Range(-0.49f, 4f));
-			int hole2 = Mathf.RoundToInt(Random.Range(5f, 9.5f));
+				int hole = Mathf.RoundToInt(UnityEngine.Random.Range(-0.49f, 4f));
+				int hole2 = Mathf.RoundToInt(UnityEngine.Random.Range(5f, 9.5f));
+				// choose randomely a hole as last hole
+				lastHolePosition = (UnityEngine.Random.Range(-1f, 1f) > 0) ? hole : hole2;
 				n.GetComponent<PlatformReferences>().Pieces[hole].gameObject.SetActive(false);
 				n.GetComponent<PlatformReferences>().Pieces[hole+1].gameObject.SetActive(false);
 				n.GetComponent<PlatformReferences>().Pieces[hole2].gameObject.SetActive(false);
@@ -128,25 +141,32 @@ public class GameManager : MonoBehaviour {
 			break;
 		}
 
-		upSpeedInternal *= 1.01f;
+		upSpeedInternal *= 1.005f;
+		Debug.Log("speed "+upSpeedInternal);
 	}
 
 	public void WatchAds() {
 		Debug.Log("ads");
-		if (Advertisement.IsReady("rewardedVideo"))
+		/*if (Advertisement.IsReady("rewardedVideo"))
 		{
 			var options = new ShowOptions { resultCallback = HandleShowResult };
 			Advertisement.Show("rewardedVideo", options);
 		}
 		else {		
 			Debug.Log("fail ad");
-		}
+		}*/
+
+		if (rewardBasedVideo.IsLoaded()) {
+    		rewardBasedVideo.Show();
+  		} else {
+  			Debug.Log("failed firebase ad");
+  		}
 
 		
 		
 	}
 
-	private void HandleShowResult(ShowResult result)
+	/*private void HandleShowResult(ShowResult result)
 	{
 		switch (result)
 		{
@@ -167,5 +187,37 @@ public class GameManager : MonoBehaviour {
 				Debug.LogError("The ad failed to be shown.");
 			break;
 		}
+	}*/
+
+	private void RequestInterstitial()
+	{
+	    #if UNITY_ANDROID
+	        string adUnitId = "ca-app-pub-5954594840677307";
+	    #else
+	        string adUnitId = "unexpected_platform";
+	    #endif
+
+	    rewardBasedVideo = RewardBasedVideoAd.Instance;
+
+	    AdRequest request = new AdRequest.Builder().Build();
+	    rewardBasedVideo.LoadAd(request, adUnitId);
+	    rewardBasedVideo.OnAdRewarded += HandleRewardBasedVideoRewarded;
+	    rewardBasedVideo.OnAdLeavingApplication += HandleOnAdLeavingApplication;
+	}
+
+	public void HandleRewardBasedVideoRewarded(object sender, EventArgs args)
+	{
+	    Debug.Log("rewared event received.");
+	    int n = PlayerPrefs.GetInt("TotalPoints")+100;
+		PlayerPrefs.SetInt("TotalPoints", n);
+		PlayerPrefs.SetString("Date", System.DateTime.Now.AddHours(1).ToString());
+	    // Handle the ad loaded event.
+	}
+
+	public void HandleOnAdLeavingApplication(object sender, EventArgs args)
+	{
+	    Debug.Log("OnAdLoaded event received.");
+	    //rewardBasedVideo.Destroy();
+	    // Handle the ad loaded event.
 	}
 }

@@ -5,6 +5,8 @@ using System.Collections;
 using UnityEngine.Advertisements;
 public class UIManager : MonoBehaviour {
 
+	private enum UIState {Menu, Shop, Game}
+
 	public Text Title, HighScore, Score, ControlText, ShopText, AdsText, Credits;
 	public Button Play, Control, Ads, Back, ButtonShop;
 	public GameObject Shop;
@@ -12,6 +14,7 @@ public class UIManager : MonoBehaviour {
 	public Text[] ShopButtons;
 
 	private string[] baseColors, prices;
+	private UIState current;
 
 	void Start() {
 		Menu();
@@ -31,6 +34,12 @@ public class UIManager : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
+
+		if(Input.GetKeyDown(KeyCode.Escape) && current == UIState.Shop) 
+		{
+			Menu();
+		}
+
 		Score.text = "Points : "+PlayerPrefs.GetInt("CurrentScore");
 		ShopText.text = "Total points: "+PlayerPrefs.GetInt("TotalPoints");
 		
@@ -60,6 +69,7 @@ public class UIManager : MonoBehaviour {
 	}
 
 	public void Menu() {
+		current = UIState.Menu;
 		HighScore.text = "Best: "+PlayerPrefs.GetInt("BestScore")+" \nTotal points: "+PlayerPrefs.GetInt("TotalPoints");
 
 		Title.enabled = true;
@@ -77,6 +87,7 @@ public class UIManager : MonoBehaviour {
 	}
 
 	public void PlayGame() {
+		current = UIState.Game;
 		Title.enabled = false;
 		Credits.enabled = false;
 		Play.gameObject.SetActive(false);
@@ -92,6 +103,7 @@ public class UIManager : MonoBehaviour {
 	}
 
 	public void GoShop() {
+		current = UIState.Shop;
 		Title.enabled = false;
 		Credits.enabled = false;
 		Play.gameObject.SetActive(false);
